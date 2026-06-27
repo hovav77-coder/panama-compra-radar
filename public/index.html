@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panama Compra Radar</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PanamaCompra</p>
+          <h1>Radar de licitaciones</h1>
+        </div>
+        <div class="topbar-actions">
+          <div id="thinkingIndicator" class="thinking-indicator hidden" role="status" aria-live="polite" aria-busy="false">
+            <span class="thinking-spinner" aria-hidden="true"></span>
+            <span id="thinkingText">Pensando...</span>
+          </div>
+          <span id="syncStatus" class="sync-status">Sin sincronizar</span>
+          <button id="refreshBtn" class="btn primary" type="button">Sincronizar</button>
+        </div>
+      </header>
+
+      <nav class="app-tabs" aria-label="Secciones principales">
+        <button id="workTabBtn" class="app-tab active" type="button" data-view="work">Mi trabajo</button>
+        <button id="tendersTabBtn" class="app-tab" type="button" data-view="tenders">Licitaciones</button>
+        <button id="flowTabBtn" class="app-tab" type="button" data-view="flow">Flujo</button>
+        <button id="quotesTabBtn" class="app-tab" type="button" data-view="quotes">Cotizaciones</button>
+        <button id="providersTabBtn" class="app-tab" type="button" data-view="providers">Proveedores</button>
+      </nav>
+
+      <main class="workspace">
+        <section id="workView" class="workspace-view" aria-label="Mi trabajo">
+          <section class="work-hero">
+            <div>
+              <p class="eyebrow">Centro de control</p>
+              <h2>Mi trabajo</h2>
+              <p>Prioriza lo que vence pronto, cotizaciones incompletas y proveedores sin respuesta.</p>
+            </div>
+            <div class="work-hero-actions">
+              <button id="workGoToTendersBtn" class="btn secondary" type="button">Buscar licitaciones</button>
+              <button id="workGoToQuotesBtn" class="btn primary" type="button">Abrir cotizaciones</button>
+            </div>
+          </section>
+
+          <section class="work-metrics" aria-label="Alertas de trabajo">
+            <div class="work-metric danger">
+              <span>Vencen pronto</span>
+              <strong id="workDueSoonCount">0</strong>
+            </div>
+            <div class="work-metric warn">
+              <span>Sin proveedores</span>
+              <strong id="workNeedQuotesCount">0</strong>
+            </div>
+            <div class="work-metric amber">
+              <span>Sin respuesta</span>
+              <strong id="workNoResponseCount">0</strong>
+            </div>
+            <div class="work-metric slate">
+              <span>Incompletas</span>
+              <strong id="workIncompleteCount">0</strong>
+            </div>
+          </section>
+
+          <section class="work-grid">
+            <section class="panel work-panel">
+              <div class="section-head">
+                <div>
+                  <h2>Alertas</h2>
+                  <p id="workAlertsMeta">Sin alertas pendientes</p>
+                </div>
+              </div>
+              <div id="workAlertsList" class="work-list"></div>
+            </section>
+
+            <section class="panel work-panel">
+              <div class="section-head">
+                <div>
+                  <h2>Procesos activos</h2>
+                  <p id="workActiveMeta">0 procesos en seguimiento</p>
+                </div>
+              </div>
+              <div id="workActiveList" class="work-list"></div>
+            </section>
+          </section>
+        </section>
+
+        <div id="tendersView" class="workspace-view hidden">
+        <section class="panel summary-panel" aria-label="Resumen">
+          <div class="metric">
+            <span class="metric-label">Resultados</span>
+            <strong id="metricTotal">0</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Publicadas 24h</span>
+            <strong id="metricFresh">0</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Activas</span>
+            <strong id="metricActive">0</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Cotizando</span>
+            <strong id="metricQuoting">0</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Vencen pronto</span>
+            <strong id="metricDueSoon">0</strong>
+          </div>
+        </section>
+
+        <section class="panel example-summary" aria-label="Resumen de licitacion seleccionada">
+          <div class="example-main">
+            <div class="example-heading">
+              <p id="summaryEyebrow" class="eyebrow">Resumen de licitaci&oacute;n seleccionada</p>
+              <h2 id="summaryTitle">Selecciona una licitaci&oacute;n del listado</h2>
+              <p id="summaryDescription" class="example-description">Aqu&iacute; ver&aacute;s el resumen de la oportunidad que escogiste para cotizar.</p>
+            </div>
+
+            <div class="example-actions">
+              <button id="summaryFavoriteBtn" class="btn secondary" type="button">Agregar favorito</button>
+              <button id="summaryItemsBtn" class="btn secondary request-open-btn" type="button">
+                <span>Ver detalle solicitud</span>
+                <strong id="summaryItemsBadge">-</strong>
+              </button>
+              <button id="summaryOpenBtn" class="btn primary" type="button">Abrir portal</button>
+              <button id="summaryCopyBtn" class="btn secondary" type="button">Copiar resumen</button>
+            </div>
+          </div>
+
+          <div class="example-data">
+            <div class="example-item wide">
+              <span>N&uacute;mero de proceso</span>
+              <strong id="summaryNumber">-</strong>
+            </div>
+            <div class="example-item">
+              <span>Objeto</span>
+              <strong id="summaryObject">-</strong>
+            </div>
+            <div class="example-item">
+              <span>Tipo de proceso</span>
+              <strong id="summaryType">-</strong>
+            </div>
+            <div class="example-item">
+              <span>Precio de referencia</span>
+              <strong id="summaryPrice">-</strong>
+            </div>
+            <div class="example-item">
+              <span>Pago</span>
+              <strong id="summaryPayment">-</strong>
+            </div>
+            <div class="example-item">
+              <span>Multas</span>
+              <strong id="summaryPenalty">-</strong>
+            </div>
+          </div>
+
+          <div class="example-timeline">
+            <div>
+              <span>Publicaci&oacute;n</span>
+              <strong id="summaryPublished">-</strong>
+            </div>
+            <div>
+              <span>Presentaci&oacute;n de propuestas</span>
+              <strong id="summarySubmission">-</strong>
+            </div>
+            <div>
+              <span>Apertura de propuestas</span>
+              <strong id="summaryOpening">-</strong>
+            </div>
+          </div>
+
+          <div class="example-contact">
+            <div>
+              <span>Entidad</span>
+              <strong id="summaryEntity">-</strong>
+            </div>
+            <div>
+              <span>Contacto</span>
+              <strong id="summaryContact">-</strong>
+            </div>
+            <div>
+              <span>Cargo</span>
+              <strong id="summaryRole">-</strong>
+            </div>
+            <div>
+              <span>Tel&eacute;fono</span>
+              <strong id="summaryPhone">-</strong>
+            </div>
+            <div>
+              <span>Correo</span>
+              <strong id="summaryEmail">-</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel favorites-panel" aria-label="Favoritos">
+          <div class="favorites-head">
+            <div>
+              <p class="eyebrow">B&uacute;squeda r&aacute;pida</p>
+              <h2>Favoritos</h2>
+            </div>
+            <button id="clearFavoritesBtn" class="btn ghost" type="button">Limpiar favoritos</button>
+          </div>
+          <div id="favoritesList" class="favorites-list"></div>
+        </section>
+
+        <section class="panel filters-panel" aria-label="Filtros">
+          <label>
+            Buscar
+            <input id="searchInput" type="search" placeholder="Numero, entidad o descripcion">
+          </label>
+          <label>
+            Estado
+            <select id="stateFilter">
+              <option value="">Todos</option>
+            </select>
+          </label>
+          <label>
+            Tipo
+            <select id="typeFilter">
+              <option value="">Todos</option>
+            </select>
+          </label>
+          <label>
+            Objeto
+            <select id="objectFilter">
+              <option value="">Todos</option>
+              <option value="Bien">Bien</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Obra">Obra</option>
+            </select>
+          </label>
+          <label>
+            Provincia
+            <select id="provinceFilter">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <label>
+            Desde
+            <input id="dateFromFilter" type="date">
+          </label>
+          <label>
+            Hasta
+            <input id="dateToFilter" type="date">
+          </label>
+          <label>
+            Tiempo restante
+            <select id="deadlineFilter">
+              <option value="">Todos</option>
+              <option value="overdue">Vencidas</option>
+              <option value="today">Vencen hoy</option>
+              <option value="48h">Vencen en 48h</option>
+              <option value="7d">Vencen en 7 dias</option>
+              <option value="missing">Sin fecha visible</option>
+            </select>
+          </label>
+          <label>
+            Cantidad
+            <select id="limitFilter">
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
+              <option value="2000">2000</option>
+            </select>
+          </label>
+          <button id="clearFiltersBtn" class="btn ghost" type="button">Limpiar</button>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel tenders-panel">
+            <div class="section-head">
+              <div>
+                <h2>Licitaciones</h2>
+                <p id="resultMeta">0 visibles</p>
+              </div>
+              <div class="export-actions">
+                <button id="exportTendersBtn" class="btn secondary" type="button">Exportar CSV</button>
+              </div>
+            </div>
+
+            <div class="stage-tabs" role="tablist" aria-label="Etapas">
+              <button class="stage-tab active" data-stage-filter="">Todas</button>
+              <button class="stage-tab" data-stage-filter="Nuevo">Nuevo</button>
+              <button class="stage-tab" data-stage-filter="Revisar">Revisar</button>
+              <button class="stage-tab" data-stage-filter="Cotizando">Cotizando</button>
+              <button class="stage-tab" data-stage-filter="Listo">Listo</button>
+              <button class="stage-tab" data-stage-filter="Descartado">Descartado</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Numero</th>
+                    <th>Estado</th>
+                    <th>Descripcion</th>
+                    <th>Entidad</th>
+                    <th>Publicado</th>
+                    <th>Tiempo restante</th>
+                    <th>Etapa</th>
+                  </tr>
+                </thead>
+                <tbody id="tendersBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="empty-state hidden">No hay licitaciones para esos filtros.</div>
+          </div>
+
+        </section>
+        </div>
+
+        <section id="flowView" class="workspace-view hidden" aria-label="Flujo interno de trabajo">
+          <section class="flow-hero">
+            <div>
+              <h2>Flujo</h2>
+              <p>Tu pipeline interno. Mueve cada proceso entre etapas. <strong>No es dato oficial: es tu control de trabajo.</strong></p>
+            </div>
+            <div class="flow-hero-actions">
+              <button id="flowGoToTendersBtn" class="btn secondary" type="button">Ver licitaciones</button>
+              <button id="flowGoToQuotesBtn" class="btn primary" type="button">Abrir cotizaciones</button>
+            </div>
+          </section>
+
+          <section class="flow-metrics" aria-label="Resumen del flujo">
+            <div>
+              <span>En trabajo</span>
+              <strong id="flowWorkingCount">0</strong>
+            </div>
+            <div>
+              <span>Alta prioridad</span>
+              <strong id="flowPriorityCount">0</strong>
+            </div>
+            <div>
+              <span>Listas</span>
+              <strong id="flowReadyCount">0</strong>
+            </div>
+          </section>
+
+          <section class="flow-board-panel">
+            <div class="section-head">
+              <div>
+                <h2>Tablero de trabajo</h2>
+                <p id="flowMeta">Marca licitaciones como favoritas para verlas aqui</p>
+              </div>
+            </div>
+            <div id="flowBoard" class="flow-board"></div>
+          </section>
+        </section>
+
+        <section id="quotesView" class="workspace-view hidden" aria-label="Back office de cotizaciones">
+          <section class="panel quote-office-hero">
+            <div>
+              <p class="eyebrow">Back office</p>
+              <h2>Control de cotizaciones por licitacion</h2>
+              <p>Administra precios propios, proveedores, seguimiento y margen estimado para cada proceso seleccionado.</p>
+            </div>
+            <div class="quote-hero-actions">
+              <label>
+                Licitacion activa
+                <select id="quoteTenderSelect"></select>
+              </label>
+              <button id="quoteGoToTendersBtn" class="btn secondary" type="button">Ver listado</button>
+              <button id="exportQuotesBtn" class="btn primary" type="button">Exportar cotizaciones</button>
+            </div>
+          </section>
+
+          <section class="quote-office-grid">
+            <section class="panel detail-panel quote-workspace-panel" aria-label="Modulo de cotizaciones">
+              <div id="detailEmpty" class="detail-empty">
+                <h2>Selecciona una licitacion</h2>
+                <p>Escoge una oportunidad del listado para abrir su tablero de cotizacion.</p>
+              </div>
+
+              <div id="detailContent" class="hidden">
+                <div class="detail-title quote-detail-title">
+                  <div>
+                    <p id="detailNumber" class="eyebrow"></p>
+                    <h2 id="detailTitle"></h2>
+                  </div>
+                  <span id="detailBadge" class="status-pill"></span>
+                </div>
+
+                <div class="quote-metrics">
+                  <div>
+                    <span>Precio referencia</span>
+                    <strong id="quoteReferencePrice">-</strong>
+                  </div>
+                  <div>
+                    <span>Mejor proveedor</span>
+                    <strong id="quoteBestSupplier">-</strong>
+                  </div>
+                  <div>
+                    <span>Costo proveedor</span>
+                    <strong id="quoteBestAmount">-</strong>
+                  </div>
+                  <div>
+                    <span>Margen estimado</span>
+                    <strong id="quoteEstimatedMargin">-</strong>
+                  </div>
+                  <div>
+                    <span>ITBMS estimado</span>
+                    <strong id="quoteTaxAmount">-</strong>
+                  </div>
+                  <div>
+                    <span>Precio sugerido</span>
+                    <strong id="quoteSuggestedPrice">-</strong>
+                  </div>
+                </div>
+
+                <dl class="detail-list quote-detail-list">
+                  <div>
+                    <dt>Entidad</dt>
+                    <dd id="detailEntity"></dd>
+                  </div>
+                  <div>
+                    <dt>Tipo</dt>
+                    <dd id="detailType"></dd>
+                  </div>
+                  <div>
+                    <dt>Objeto</dt>
+                    <dd id="detailObject"></dd>
+                  </div>
+                  <div>
+                    <dt>Publicado</dt>
+                    <dd id="detailDate"></dd>
+                  </div>
+                </dl>
+
+                <div class="detail-actions">
+                  <a id="portalLink" class="btn primary" target="_blank" rel="noreferrer noopener">Abrir portal</a>
+                  <button id="copyMessageBtn" class="btn secondary" type="button">Copiar mensaje proveedor</button>
+                </div>
+
+                <div class="quote-controls quote-planning-controls">
+                  <label>
+                    Etapa interna
+                    <select id="stageSelect">
+                      <option>Nuevo</option>
+                      <option>Revisar</option>
+                      <option>Cotizando</option>
+                      <option>Listo</option>
+                      <option>Descartado</option>
+                    </select>
+                  </label>
+                  <label>
+                    Prioridad
+                    <select id="prioritySelect">
+                      <option>Media</option>
+                      <option>Alta</option>
+                      <option>Baja</option>
+                    </select>
+                  </label>
+                  <label>
+                    Fecha limite interna
+                    <input id="quoteDueDate" type="date">
+                  </label>
+                  <label>
+                    Margen meta %
+                    <input id="quoteTargetMargin" type="number" min="0" step="0.1" placeholder="Ej. 12">
+                  </label>
+                  <label>
+                    ITBMS %
+                    <input id="quoteTaxRate" type="number" min="0" step="0.1" placeholder="7">
+                  </label>
+                </div>
+
+                <label class="notes-label">
+                  Notas internas
+                  <textarea id="notesInput" rows="4" placeholder="Margen, requisitos, dudas, documentos y contactos pendientes"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="panel quote-suppliers-panel" aria-label="Cotizaciones de proveedores">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Precios propios</p>
+                  <h2>Proveedores cotizados</h2>
+                  <p id="quoteSupplierMeta">Sin proveedores agregados</p>
+                </div>
+              </div>
+
+              <form id="supplierForm" class="supplier-form quote-supplier-form">
+                <label>
+                  Proveedor
+                  <input id="supplierName" required placeholder="Nombre del proveedor">
+                </label>
+                <label>
+                  Contacto
+                  <input id="supplierContact" placeholder="Telefono, correo o persona">
+                </label>
+                <label>
+                  Monto B/.
+                  <input id="supplierAmount" inputmode="decimal" placeholder="Precio recibido">
+                </label>
+                <label>
+                  Entrega
+                  <input id="supplierLeadTime" placeholder="Ej. 5 dias, inmediato">
+                </label>
+                <label>
+                  Estado
+                  <select id="supplierStatus">
+                    <option>Solicitado</option>
+                    <option>Enviado</option>
+                    <option>Respondio</option>
+                    <option>Negociando</option>
+                    <option>Ganador interno</option>
+                    <option>No participa</option>
+                  </select>
+                </label>
+                <label>
+                  Nota
+                  <input id="supplierNote" placeholder="Condiciones, garantia, dudas">
+                </label>
+                <button class="btn primary" type="submit">Agregar cotizacion</button>
+              </form>
+
+              <div id="suppliersList" class="suppliers-list quote-suppliers-list"></div>
+            </section>
+          </section>
+        </section>
+
+        <section id="providersView" class="workspace-view hidden" aria-label="Busqueda por proveedor">
+          <section class="panel provider-hero">
+            <div>
+              <p class="eyebrow">Actividad por proveedor</p>
+              <h2>Historial publico por proveedor</h2>
+              <p>Participaciones, adjudicaciones y sanciones localizadas en procesos publicados del portal.</p>
+            </div>
+            <div class="provider-hero-metrics">
+              <div>
+                <span>Proveedores</span>
+                <strong id="providerMetricMatches">0</strong>
+              </div>
+              <div>
+                <span>Actividades</span>
+                <strong id="providerMetricActivities">0</strong>
+              </div>
+              <div>
+                <span>Sanciones</span>
+                <strong id="providerMetricSanctions">0</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel provider-search-panel">
+            <form id="providerSearchForm" class="provider-search-form">
+              <label>
+                Nombre del proveedor
+                <input id="providerNameInput" type="search" placeholder="Ej. BLINQ, Microsoft, Distribuidora">
+              </label>
+              <label>
+                Desde
+                <input id="providerDateFrom" type="date">
+              </label>
+              <label>
+                Hasta
+                <input id="providerDateTo" type="date">
+              </label>
+              <label>
+                Procesos a revisar
+                <select id="providerScanLimit">
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="150">150</option>
+                </select>
+              </label>
+              <button id="providerSearchBtn" class="btn primary" type="submit">Buscar proveedor</button>
+            </form>
+            <p id="providerSearchMeta" class="provider-search-meta">Ingresa un nombre para consultar proveedores, participaciones y sanciones publicas.</p>
+          </section>
+
+          <section class="panel provider-crm-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">CRM interno</p>
+                <h2>Proveedores frecuentes</h2>
+                <p>Guarda contactos, rubros y notas propias del equipo.</p>
+              </div>
+            </div>
+            <form id="crmProviderForm" class="crm-provider-form">
+              <label>
+                Proveedor
+                <input id="crmProviderName" required placeholder="Nombre o razon social">
+              </label>
+              <label>
+                Contacto
+                <input id="crmProviderContact" placeholder="Persona, telefono o correo">
+              </label>
+              <label>
+                Rubro
+                <input id="crmProviderCategory" placeholder="Software, eventos, ferreteria">
+              </label>
+              <label>
+                Estado
+                <select id="crmProviderStatus">
+                  <option>Activo</option>
+                  <option>Evaluar</option>
+                  <option>No usar</option>
+                </select>
+              </label>
+              <label class="crm-note-field">
+                Nota
+                <input id="crmProviderNote" placeholder="Condiciones, marcas, tiempos, observaciones">
+              </label>
+              <button class="btn primary" type="submit">Guardar proveedor</button>
+            </form>
+            <div id="crmProvidersList" class="crm-providers-list"></div>
+          </section>
+
+          <section class="provider-results-grid">
+            <div class="panel provider-list-panel">
+              <div class="section-head">
+                <div>
+                  <h2>Proveedores encontrados</h2>
+                  <p id="providerListMeta">Sin busqueda</p>
+                </div>
+              </div>
+              <div id="providerMatchesList" class="provider-matches-list"></div>
+            </div>
+
+            <div class="panel provider-activity-panel">
+              <div class="section-head">
+                <div>
+                  <h2>Actividad en el portal</h2>
+                  <p id="providerActivityMeta">Sin resultados</p>
+                </div>
+              </div>
+              <div id="providerActivitiesList" class="provider-activities-list"></div>
+            </div>
+          </section>
+
+          <section class="panel provider-sanctions-panel">
+            <div class="section-head">
+              <div>
+                <h2>Multas e inhabilitaciones</h2>
+                <p id="providerSanctionsMeta">Sin resultados</p>
+              </div>
+            </div>
+            <div id="providerSanctionsList" class="provider-sanctions-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="thinkingOverlay" class="thinking-overlay hidden" role="status" aria-live="polite" aria-busy="false">
+      <div class="thinking-card">
+        <span class="thinking-spinner thinking-spinner-large" aria-hidden="true"></span>
+        <strong id="thinkingOverlayText">Pensando...</strong>
+        <span>Espera un momento</span>
+      </div>
+    </div>
+
+    <div id="requestModal" class="request-modal hidden" role="dialog" aria-modal="true" aria-labelledby="requestModalTitle">
+      <section class="request-modal-card">
+        <div class="request-detail-head">
+          <div>
+            <p class="eyebrow">Detalle de solicitud</p>
+            <h2 id="requestModalTitle">&Iacute;tems de compra menor</h2>
+          </div>
+          <button id="requestModalClose" class="btn ghost" type="button">Cerrar</button>
+        </div>
+
+        <div class="request-total">
+          <span>Total</span>
+          <strong id="summaryItemsTotal">-</strong>
+        </div>
+
+        <div id="summaryItemsList" class="request-items"></div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

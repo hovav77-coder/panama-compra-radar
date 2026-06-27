@@ -1,0 +1,10 @@
+node_modules/
+.env
+.agents/
+.vercel/
+server-4174.err.log
+server-4174.out.log
+.DS_Store
+Thumbs.db
+data/*.json
+!.gitkeep
