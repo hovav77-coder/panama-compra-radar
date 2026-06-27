@@ -2,6 +2,26 @@
   "version": 2,
   "routes": [
     {
+      "src": "/api/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/api/catalogs",
+      "dest": "/api/catalogs.js"
+    },
+    {
+      "src": "/api/licitaciones",
+      "dest": "/api/licitaciones.js"
+    },
+    {
+      "src": "/api/licitacion-detalle",
+      "dest": "/api/licitacion-detalle.js"
+    },
+    {
+      "src": "/api/proveedor-actividad",
+      "dest": "/api/proveedor-actividad.js"
+    },
+    {
       "handle": "filesystem"
     },
     {
